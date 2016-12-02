@@ -1,14 +1,11 @@
-#from flask import Flask
-#from flask.ext.mysqldb import MySQL
+# config.py by Arnaldo Govene [arnaldo.govene@outlook.com]
+# Contains basic app variables
+# Copyrighth 2016 Xindiri, LLC
 
-#config['MYSQL_HOST'] = 'localhost'
-#config['MYSQL_USER'] = 'root'
-#config['MYSQL_PASSWORD'] = ''
-#config['MYSQL_DB'] ='kutiva??2016'
-#mysql = MySQL(app)
+DEBUG = "TRUE" # Turns on flask debug features
 
-#@app.route('/')
-#def index():
-#    cur = mysql.connection.cursor()
-#    cur.execute('''SELECT * FROM mentor ''')
-#    return str(rv)
+# MySQL database credentials
+MYSQL_DATABASE_HOST = "localhost"
+MYSQL_DATABASE_USER = "root"
+MYSQL_DATABASE_PASSWORD = ""
+MYSQL_DATABASE_DB = "kutiva_2016"
