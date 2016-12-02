@@ -7,6 +7,7 @@ from flask.ext.mysql import MySQL
 from models.mentor import Mentor
 from models.student import Student
 from utils import Utils
+import hashlib
 
 mysql = MySQL()
 app = Flask(__name__)
@@ -34,7 +35,7 @@ def find_all_mentors ():
         email        = request.args.get('email')
         country_code = request.args.get('country_code')
         phone        = request.args.get('phone')
-        password     = Utils.password_hash(Utils, request.args.get('password')) # Hash password
+        password     = hashlib.md5(request.args.get('password').encode()).hexdigest() # Hash password
 
         if first_name is None or last_name is None or category is None or email is None or country_code is None or phone is None or password is None:
             return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
@@ -50,6 +51,26 @@ def find_all_mentors ():
         return "UPDATES"
     elif request.method == 'DELETE':
         return "DELETES"
+
+
+# Mentor login
+@app.route("/Account/Mentors/Login/", methods = ['POST'])
+def login_mentors():
+    if request.method == 'POST':
+        username   = request.args.get('username')
+        password   = hashlib.md5(request.args.get('password').encode()).hexdigest() # Hash password
+
+        if username is None or password is None:
+            return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
+        else:
+            id = Mentor.authenticate(Mentor, mysql, username, password)
+            if id is not None:
+                return jsonify({'id': id }), 201 # Success
+            else:
+                return jsonify({'Status': 'Error: Check you credentials'}), 400 # Missing arguments
+    else:
+        return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
+
 
 # CRDU mentor by id
 @app.route("/Account/Student/<int:id>", methods = ['GET', 'POST', 'UPDATE', 'DELETE'])
@@ -79,7 +100,7 @@ def find_all_students ():
         email        = request.args.get('email')
         country_code = request.args.get('country_code')
         phone        = request.args.get('phone')
-        password     = Utils.password_hash(Utils, request.args.get('password')) # Hash password
+        password     = hashlib.md5(request.args.get('password').encode()).hexdigest() # Hash password
 
         if first_name is None or last_name is None or gender is None or age is None or email is None or country_code is None or phone is None or password is None:
             return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
@@ -98,6 +119,23 @@ def find_all_students ():
         return "DELETES"
 
 
+# Mentor login
+@app.route("/Account/Students/Login/", methods = ['POST'])
+def login_students():
+    if request.method == 'POST':
+        username   = request.args.get('username')
+        password   = hashlib.md5(request.args.get('password').encode()).hexdigest() # Hash password
+
+        if username is None or password is None:
+            return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
+        else:
+            id = Student.authenticate(Student, mysql, username, password)
+            if id is not None:
+                return jsonify({'id': id }), 201 # Success
+            else:
+                return jsonify({'Status': 'Error: Check you credentials'}), 400 # Missing arguments
+    else:
+        return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
 
 
 if __name__ == "__main__":

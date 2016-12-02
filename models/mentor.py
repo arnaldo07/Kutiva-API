@@ -23,7 +23,8 @@ class Mentor():
         '''
         Serializes data coming from database
 
-        return: serialized  list
+        return:
+            serialized  list
         '''
         return {
         'id': self.id,
@@ -43,7 +44,8 @@ class Mentor():
         '''
         Gets all data coming from the database
 
-        return: Json object
+        return:
+            Json object
         '''
 
         cursor = mysql.get_db().cursor()
@@ -89,14 +91,34 @@ class Mentor():
 
         return jsonify(self.serialize(self))
 
+    def authenticate(self, mysql, username, password):
+        '''
+        authenticates mentor account
+
+        Parameters:
+            mysql: Mysql connection cursor
+            username: mentor account email
+            password: mentor account password
+        '''
+        cursor = mysql.get_db().cursor()
+        sql = '''SELECT mentor_id FROM {} JOIN {} WHERE (mentor_id = password_owner_account_id and password_owner_account_type = '{}')
+         and ( mentor_email = '{}' and password_encrypted = '{}' )'''.format(self.table_name(self), self.pwd_table_name(self), self.account_type(self), username, password)
+        cursor.execute(sql)
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+        else:
+            return row[0]
+
     def create_password(self, mysql, hashed_password, student_id):
         '''
         Inserts new password to the database
 
         Parameters:
-        mysql: Mysql connection cursor
-        hashed_password: student accoumt hashed password
-        student_id: student primary key
+            mysql: Mysql connection cursor
+            hashed_password: student accoumt hashed password
+            student_id: student primary key
         '''
         cursor = mysql.get_db().cursor()
         sql = '''INSERT INTO {} (password_encrypted, password_owner_account_type, password_owner_account_id ) VALUES
@@ -113,9 +135,9 @@ class Mentor():
         Checks if account exist
 
         Parameters:
-        mysql: Mysql connection cursor
-        email: mentor email
-        phone: mentor phone number
+            mysql: Mysql connection cursor
+            email: mentor email
+            phone: mentor phone number
         '''
 
         cursor = mysql.get_db().cursor()
@@ -134,8 +156,8 @@ class Mentor():
         Inserts new mentor to the database
 
         Parameters:
-        mysql: Mysql connection cursor
-        data : mentor data dictionary
+            mysql: Mysql connection cursor
+            data : mentor data dictionary
         '''
         cursor = mysql.get_db().cursor()
         sql = '''INSERT INTO {} (mentor_first_name, mentor_last_name,

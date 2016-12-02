@@ -19,6 +19,26 @@ class Student():
         return "Student"
 
 
+    def authenticate(self, mysql, username, password):
+        '''
+        authenticates student account
+
+        Parameters:
+            mysql: Mysql connection cursor
+            username: student account email
+            password: student account password
+        '''
+        cursor = mysql.get_db().cursor()
+        sql = '''SELECT student_id FROM {} JOIN {} WHERE (student_id = password_owner_account_id and password_owner_account_type = '{}')
+         and ( student_email = '{}' and password_encrypted = '{}' )'''.format(self.table_name(self), self.pwd_table_name(self), self.account_type(self), username, password)
+        cursor.execute(sql)
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+        else:
+            return row[0]
+
 
     def exists(self, mysql, email, phone):
         '''
