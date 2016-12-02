@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, abort
 from flask.ext.mysql import MySQL
 from models.mentor import Mentor
 from models.student import Student
-
+from utils import Utils
 
 mysql = MySQL()
 app = Flask(__name__)
@@ -34,7 +34,7 @@ def find_all_mentors ():
         email        = request.args.get('email')
         country_code = request.args.get('country_code')
         phone        = request.args.get('phone')
-        password     = request.args.get('password')
+        password     = Utils.password_hash(Utils, request.args.get('password')) # Hash password
 
         if first_name is None or last_name is None or category is None or email is None or country_code is None or phone is None or password is None:
             return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
@@ -79,7 +79,7 @@ def find_all_students ():
         email        = request.args.get('email')
         country_code = request.args.get('country_code')
         phone        = request.args.get('phone')
-        password     = request.args.get('password')
+        password     = Utils.password_hash(Utils, request.args.get('password')) # Hash password
 
         if first_name is None or last_name is None or gender is None or age is None or email is None or country_code is None or phone is None or password is None:
             return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
