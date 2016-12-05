@@ -3,6 +3,9 @@
 # Copyrighth 2016 Xindiri, LLC
 
 from flask import Flask, jsonify, request, json
+import hashlib
+from time import gmtime, strftime
+import hashlib
 
 class Mentor():
 
@@ -17,6 +20,9 @@ class Mentor():
     def account_type(self):
         return 'Mentor'
 
+    # Email_verification table_name
+    def mail_verify_table_name(self):
+        return "email_verfication"
 
     # Serialize data from database
     def serialize(self):
@@ -63,7 +69,7 @@ class Mentor():
         self.account_status = 'Active'
         self.account_registration_date = '12-01-2016 12:43:33'
 
-        return jsonify(self.serialize(self))
+        return jsonify(rows)
 
 
     # Get by id
@@ -91,6 +97,7 @@ class Mentor():
 
         return jsonify(self.serialize(self))
 
+
     def authenticate(self, mysql, username, password):
         '''
         authenticates mentor account
@@ -111,7 +118,8 @@ class Mentor():
         else:
             return row[0]
 
-    def create_password(self, mysql, hashed_password, student_id):
+
+    def create_password(self, mysql, hashed_password, mentor_id):
         '''
         Inserts new password to the database
 
@@ -122,13 +130,67 @@ class Mentor():
         '''
         cursor = mysql.get_db().cursor()
         sql = '''INSERT INTO {} (password_encrypted, password_owner_account_type, password_owner_account_id ) VALUES
-        ('{}', '{}', '{}')'''.format(self.pwd_table_name(self), hashed_password, self.account_type(self), student_id)
+        ('{}', '{}', '{}')'''.format(self.pwd_table_name(self), hashed_password, self.account_type(self), mentor_id)
         row = cursor.execute(sql)
         mysql.get_db().commit()
         if row is 1:
             return True
         else:
             return False
+
+    # Create email verification
+    def create_email_verification(self, mysql, account_id):
+            '''
+            Inserts new email_verificaion to the database
+
+            Parameters:
+                mysql: Mysql connection cursor
+                account_id : verification account id
+            '''
+            active = True # Set email token active to true
+            cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
+            tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
+            token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
+            cursor = mysql.get_db().cursor()
+
+            sql = '''INSERT INTO {} (email_verification_token, email_verification_active,
+            email_verification_account_type, email_verification_account_id ) VALUES
+            ('{}', '{}', '{}', '{}')'''.format(self.mail_verify_table_name(self), token, active, self.account_type(self),account_id )
+            row = cursor.execute(sql)
+            mysql.get_db().commit()
+
+            if row is None:
+                return False
+            else:
+                return True
+
+
+    # Update email verification
+    def update_email_verification(self, mysql, account_id):
+            '''
+            Updates email_verificaion to the database
+
+            Parameters:
+                mysql: Mysql connection cursor
+                account_id : verification account id
+            '''
+            active = True # Set email token active to true
+            cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
+            tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
+            token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
+            cursor = mysql.get_db().cursor()
+
+            sql = '''UPDATE {} SET email_verification_token = '{}' AND email_verification_active = '{}' AND
+            email_verification_datetime = CURRENT_TIMESTAMP WHERE email_verification_account_type = '{}'
+            AND email_verification_account_id '''.format(self.mail_verify_table_name(self), token, active,
+            self.account_type(self), account_id )
+            row = cursor.execute(sql)
+            mysql.get_db().commit()
+
+            if row is None:
+                return False
+            else:
+                return True
 
     def exists(self, mysql, email, phone):
         '''
@@ -149,7 +211,6 @@ class Mentor():
             return True
 
 
-
     # Creates a mentor
     def create(self, mysql, first_name, last_name, category, email, country_code, phone, password):
         '''
@@ -166,9 +227,10 @@ class Mentor():
         email, country_code, phone)
         row = cursor.execute(sql)
         mysql.get_db().commit()
-        student_id = cursor.lastrowid # Last inserted id
-        self.create_password(self, mysql, password, student_id) # Create password
+        mentor_id = cursor.lastrowid # Last inserted id
+        self.create_password(self, mysql, password, mentor_id) # Create password
+        self.create_email_verification(self, mysql, mentor_id) # Create email verification token
         if row is 1:
-            return True
+            return mentor_id
         else:
-            return False
+            return None
