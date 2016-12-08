@@ -26,7 +26,11 @@ def index():
 @app.route("/Account/Mentors/", methods = ['GET', 'POST', 'UPDATE', 'DELETE'])
 def find_all_mentors ():
     if request.method   == 'GET':
-        return Mentor.find_all(Mentor, mysql)
+        result = Mentor.find_all(Mentor, mysql)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
 
     # POST Mentors data
     elif request.method == 'POST':
@@ -49,11 +53,36 @@ def find_all_mentors ():
             else:
                 return jsonify({'Status': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
 
+# Mentors CRDU by id
+@app.route("/Account/Mentors/<int:id>", methods = ['GET', 'UPDATE', 'DELETE'])
+def find_mentors_by_id (id):
+    if request.method   == 'GET':
+        result = Mentor.find_by_id(Mentor, mysql, id)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+
     elif request.method == 'UPDATE':
         return "UPDATES"
     elif request.method == 'DELETE':
         return "DELETES"
 
+# Mentor by category
+@app.route("/Account/Mentors/<string:category>", methods = ['GET'])
+def find_mentors_by_category (category):
+    if request.method   == 'GET':
+        result = Mentor.find_by_category(Mentor, mysql, category)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+
+
+    elif request.method == 'UPDATE':
+        return "UPDATES"
+    elif request.method == 'DELETE':
+        return "DELETES"
 
 # Mentor login
 @app.route("/Account/Mentors/Login/", methods = ['POST'])
@@ -74,24 +103,15 @@ def login_mentors():
         return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
 
 
-# CRDU mentor by id
-@app.route("/Account/Students/<int:id>", methods = ['GET', 'POST', 'UPDATE', 'DELETE'])
-def find_student_by_id (id):
-    if request.method   == 'GET':
-        return Mentor.find_by_id(Mentor, mysql, id)
-    elif request.method == 'POST':
-        return"POST by "+str(id)
-    elif request.method == 'UPDATE':
-        return "UPDATESby "+str(id)
-    elif request.method == 'DELETE':
-        return "DELETES by "+str(id)
-
-
 # All students CRDU
 @app.route("/Account/Students/", methods = ['GET', 'POST', 'UPDATE', 'DELETE'])
 def find_all_students ():
     if request.method   == 'GET':
-        return ''
+        result = Student.find_all(Student, mysql)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
 
     # POST student data
     elif request.method == 'POST':
@@ -122,7 +142,24 @@ def find_all_students ():
         return "DELETES"
 
 
-# Mentor login
+# CRDU Student by id
+@app.route("/Account/Students/<int:id>", methods = ['GET', 'POST', 'UPDATE', 'DELETE'])
+def find_student_by_id (id):
+    if request.method   == 'GET':
+        result = Student.find_by_id(Student, mysql, id)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+
+    elif request.method == 'POST':
+        return"POST by "+str(id)
+    elif request.method == 'UPDATE':
+        return "UPDATESby "+str(id)
+    elif request.method == 'DELETE':
+        return "DELETES by "+str(id)
+
+# Students login
 @app.route("/Account/Students/Login/", methods = ['POST'])
 def login_students():
     if request.method == 'POST':
@@ -145,7 +182,12 @@ def login_students():
 @app.route("/Courses/", methods = ['GET', 'POST', 'UPDATE', 'DELETE'])
 def find_all_courses ():
     if request.method   == 'GET':
-        return Course.find_all(Course, mysql)
+        result = Course.find_all(Course, mysql)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+
 
     # POST course data
     elif request.method == 'POST':
@@ -168,6 +210,46 @@ def find_all_courses ():
         return "UPDATES"
     elif request.method == 'DELETE':
         return "DELETES"
+
+# Courses by id
+@app.route("/Courses/<int:id>", methods = ['GET', 'UPDATE', 'DELETE'])
+def find_course_by_id (id):
+    if request.method   == 'GET':
+        result = Course.find_by_id(Course, mysql, id)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+
+    elif request.method == 'UPDATE':
+        return "UPDATES"
+    elif request.method == 'DELETE':
+        return "DELETES"
+
+# Courses by category
+@app.route("/Courses/<string:category>", methods = ['GET'])
+def find_course_by_category (category):
+    if request.method   == 'GET':
+        result = Course.find_by_category(Course, mysql, category)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+    else:
+        return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
+
+# Courses by search
+@app.route("/Courses/Search/<string:search>", methods = ['GET'])
+def search_course (search):
+    if request.method   == 'GET':
+        result = Course.search(Course, mysql, search)
+        if result is not None:
+            return result # Json encoded response
+        else:
+            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+    else:
+        return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
+
 
 
 if __name__ == "__main__":

@@ -24,79 +24,104 @@ class Mentor():
     def mail_verify_table_name(self):
         return "email_verfication"
 
-    # Serialize data from database
-    def serialize(self):
-        '''
-        Serializes data coming from database
-
-        return:
-            serialized  list
-        '''
-        return {
-        'id': self.id,
-        'first_name': self.first_name,
-        'last_name': self.last_name,
-        'category': self.category,
-        'email': self.email,
-        'country_code': self.country_code,
-        'phone': self.phone,
-        'profile_image_url': self.profile_image_url,
-        'account_status': self.account_status,
-        'account_registration_date': self.account_registration_date
-        }
 
     # Find all
     def find_all(self, mysql):
         '''
         Gets all data coming from the database
 
-        return:
-            Json object
+        Parameters:
+                mysql: Mysql connection cursor
+
         '''
 
         cursor = mysql.get_db().cursor()
         cursor.execute('''SELECT * from {} '''.format(self.table_name(self)))
-        rows = cursor.fetchall()
+        row = cursor.fetchall()
 
-        self.id = 356566
-        self.first_name = 'Arnaldo'
-        self.last_name  = 'Govene'
-        self.category ='business'
-        self.email = 'arnaldo.govene@outlook.com'
-        self.country_code = 258
-        self.phone = 846861894
-        self.profile_image_url = 'http://localhost/jgjhghg.jpg'
-        self.account_status = 'Active'
-        self.account_registration_date = '12-01-2016 12:43:33'
+        if row is None:
+            return None
+        else:
+            result = []
+            for i in row:
+                data = {
+                    'id':                        i[0],
+                    'first_name':                i[1],
+                    'last_name':                 i[2],
+                    'category':                  i[3],
+                    'email':                     i[4],
+                    'country_code':              i[5],
+                    'phone':                     i[6],
+                    'profile_image_url':         i[7],
+                    'account_status':            i[8],
+                    'account_registration_date': i[9]
+                    }
+                result.append(data)
 
-        return jsonify(rows)
+            return jsonify(result)
 
 
     # Get by id
-    def find_by_id(seif, mysql, id):
+    def find_by_id(self, mysql, id):
         '''
         Gets data from the database by id
 
-        return: Json object
+        Parameters:
+            id: mentor id
         '''
 
         cursor = mysql.get_db().cursor()
-        cursor.execute('''SELECT * from {} WHERE mentor_id = {}'''.format(self.table_name, id))
+        cursor.execute('''SELECT * FROM {} WHERE mentor_id = {}'''.format(self.table_name(self), id))
         row = cursor.fetchone()
 
-        self.id = row[1]
-        self.first_name = 'Arnaldo'
-        self.last_name  = 'Govene'
-        self.category ='business'
-        self.email = 'arnaldo.govene@outlook.com'
-        self.country_code = 258
-        self.phone = 846861894
-        self.profile_image_url = 'http://localhost/jgjhghg.jpg'
-        self.account_status = 'Active'
-        self.account_registration_date = '12-01-2016 12:43:33'
+        if row is None:
+            return None
+        else:
+            data = {
+                'id':                        row[0],
+                'first_name':                row[1],
+                'last_name':                 row[2],
+                'category':                  row[3],
+                'email':                     row[4],
+                'country_code':              row[5],
+                'phone':                     row[6],
+                'profile_image_url':         row[7],
+                'account_status':            row[8],
+                'account_registration_date': row[9]
+                }
 
-        return jsonify(self.serialize(self))
+            return jsonify(data)
 
+    # Get by category
+    def find_by_category(self, mysql, category):
+        '''
+        Gets data from the database by category
+
+        Parameters:
+            category: mentor category
+        '''
+
+        cursor = mysql.get_db().cursor()
+        cursor.execute('''SELECT * from {} WHERE mentor_scope_category = "{}" '''.format(self.table_name(self), category))
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+        else:
+            data = {
+                'id':                        row[0],
+                'first_name':                row[1],
+                'last_name':                 row[2],
+                'category':                  row[3],
+                'email':                     row[4],
+                'country_code':              row[5],
+                'phone':                     row[6],
+                'profile_image_url':         row[7],
+                'account_status':            row[8],
+                'account_registration_date': row[9]
+                }
+
+            return jsonify(data)
 
     def authenticate(self, mysql, username, password):
         '''
@@ -192,6 +217,7 @@ class Mentor():
             else:
                 return True
 
+    
     def exists(self, mysql, email, phone):
         '''
         Checks if account exist
@@ -231,6 +257,6 @@ class Mentor():
         self.create_password(self, mysql, password, mentor_id) # Create password
         self.create_email_verification(self, mysql, mentor_id) # Create email verification token
         if row is 1:
-            return mentor_id
+            return True
         else:
             return None

@@ -24,6 +24,76 @@ class Student():
     def mail_verify_table_name(self):
         return "email_verfication"
 
+    # Find all
+    def find_all(self, mysql):
+        '''
+        Gets all data from the database
+
+        Parameters:
+            mysql: Mysql connection cursor
+        '''
+
+        cursor = mysql.get_db().cursor()
+        cursor.execute('''SELECT * FROM {} '''.format(self.table_name(self)))
+        row = cursor.fetchall()
+
+        if row is None:
+            return None
+        else:
+            result = []
+            for i in row:
+                data = {
+                    'id':                        i[0],
+                    'first_name':                i[1],
+                    'last_name':                 i[2],
+                    'gender':                    i[3],
+                    'birthdate':                 i[4],
+                    'email':                     i[5],
+                    'country_code':              i[6],
+                    'phone':                     i[7],
+                    'profile_image_url':         i[8],
+                    'account_status':            i[9],
+                    'account_registration_date': i[10]
+                    }
+
+                result.append(data)
+
+            return jsonify(result)
+
+    # Get by id
+    def find_by_id(self, mysql, id):
+        '''
+        Gets data from the database by id
+
+        Parameters:
+            mysql: Mysql connection cursor
+            id: student id
+        '''
+
+        cursor = mysql.get_db().cursor()
+        cursor.execute('''SELECT * FROM {} WHERE student_id = {}'''.format(self.table_name(self), id))
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+        else:
+            data = {
+                'id':                        row[0],
+                'first_name':                row[1],
+                'last_name':                 row[2],
+                'gender':                    row[3],
+                'birthdate':                 row[4],
+                'email':                     row[5],
+                'country_code':              row[6],
+                'phone':                     row[7],
+                'profile_image_url':         row[8],
+                'account_status':            row[9],
+                'account_registration_date': row[10]
+                }
+
+            return jsonify(data)
+
+
     def authenticate(self, mysql, username, password):
         '''
         authenticates student account
