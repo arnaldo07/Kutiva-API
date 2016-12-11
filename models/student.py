@@ -116,60 +116,123 @@ class Student():
 
     # Create email verification
     def create_email_verification(self, mysql, account_id):
-            '''
-            Inserts new email_verificaion to the database
+        '''
+        Inserts new email_verificaion to the database
 
-            Parameters:
-                mysql: Mysql connection cursor
-                account_id : verification account id
-            '''
-            active = True # Set email token active to true
-            cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
-            tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
-            token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
-            cursor = mysql.get_db().cursor()
+        Parameters:
+            mysql: Mysql connection cursor
+            account_id : verification account id
+        '''
+        active = 1 # Set email token active to true
+        cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
+        tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
+        token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
+        cursor = mysql.get_db().cursor()
 
-            sql = '''INSERT INTO {} (email_verification_token, email_verification_active,
-            email_verification_account_type, email_verification_account_id ) VALUES
-            ('{}', '{}', '{}', '{}')'''.format(self.mail_verify_table_name(self), token, active, self.account_type(self),account_id )
-            row = cursor.execute(sql)
-            mysql.get_db().commit()
+        sql = '''INSERT INTO {} (email_verification_token, email_verification_active,
+        email_verification_account_type, email_verification_account_id ) VALUES
+        ('{}', '{}', '{}', '{}')'''.format(self.mail_verify_table_name(self), token, active, self.account_type(self),account_id )
+        row = cursor.execute(sql)
+        mysql.get_db().commit()
 
-            if row is None:
-                return False
-            else:
-                return True
-
+        if row is None:
+            return None
+        else:
+            return token
 
     # Update email verification
     def update_email_verification(self, mysql, account_id):
-            '''
-            Updates email_verificaion to the database
+        '''
+        Updates email_verificaion to the database
 
-            Parameters:
-                mysql: Mysql connection cursor
-                account_id : verification account id
-            '''
-            active = True # Set email token active to true
-            cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
-            tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
-            token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
-            cursor = mysql.get_db().cursor()
+        Parameters:
+            mysql: Mysql connection cursor
+            account_id : verification account id
+        '''
+        active = 1 # Set email token active to true
+        cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
+        tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
+        token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
+        cursor = mysql.get_db().cursor()
 
-            sql = '''UPDATE {} SET email_verification_token = '{}' AND email_verification_active = '{}' AND
-            email_verification_datetime = CURRENT_TIMESTAMP WHERE email_verification_account_type = '{}'
-            AND email_verification_account_id '''.format(self.mail_verify_table_name(self), token, active,
-            self.account_type(self), account_id )
-            row = cursor.execute(sql)
-            mysql.get_db().commit()
+        sql = '''UPDATE {} SET email_verification_token = '{}' AND email_verification_active = '{}' AND
+        email_verification_datetime = CURRENT_TIMESTAMP WHERE email_verification_account_type = '{}'
+        AND email_verification_account_id '''.format(self.mail_verify_table_name(self), token, active,
+        self.account_type(self), account_id )
+        row = cursor.execute(sql)
+        mysql.get_db().commit()
 
-            if row is None:
-                return False
-            else:
-                return True
+        if row == 1:
+            return token
+        else:
+            return None
 
+    # Desactivate mail verification token
+    def desactivate_email_verification(self, mysql, token, account_id):
+        '''
+        Desactivates email verification token
 
-    def exists(self, mysql, email, phone):
+        Parameters:
+            mysql: Mysql connection cursor
+            token: verification token
+            account_id : verification account id
+        '''
+        active = 0 # Set email token active to true
+        cursor = mysql.get_db().cursor()
+        sql = '''UPDATE {} SET email_verification_active = '{}'  WHERE  email_verification_token = '{}' AND
+        email_verification_account_type = '{}' AND email_verification_account_id '''.format(self.mail_verify_table_name(self),
+        active, token, self.account_type(self), account_id )
+        row = cursor.execute(sql)
+        mysql.get_db().commit()
+
+        if row == 1:
+            return True
+        else:
+            return False
+
+    # Check email verification expiration
+    def email_verification_in_date(self, mysql, token, id):
+        '''
+        Checks if email less than 24 hours and returns true else false.
+        For verification expiration purposes.
+
+        Parameters:
+            mysql: Mysql connection cursor
+            token: verification token
+            id: account id
+        '''
+        active = 1
+        cursor = mysql.get_db().cursor()
+        cursor.execute('''SELECT * FROM {} WHERE email_verification_token = '{}' AND email_verification_account_type = '{}'
+        AND email_verification_account_id = '{}' AND email_verification_datetime > DATE_SUB(NOW(), INTERVAL 24 HOUR) AND
+        email_verification_active = {}
+        '''.format(self.mail_verify_table_name(self), token, self.account_type(self), id, active))
+        row = cursor.fetchone()
+        if row is None:
+            return True
+        else:
+            return False
+
+    # Check if account is actived
+    def is_active(self, mysql, email):
+        '''
+        Checks if account is active and returns boolean
+
+        Parameters:
+            mysql: Mysql connection cursor
+            email: account email
+        '''
+        status = 'active'
+        cursor = mysql.get_db().cursor()
+        cursor.execute('''SELECT * FROM {} WHERE student_account_status = '{}' AND student_email = '{}' '''.format(
+        self.table_name(self), status, email ))
+        row = cursor.fetchone()
+        if row is None:
+            return False
+        else:
+            return True
+
+    def email_exists(self, mysql, email):
         '''
         Checks if account exist
 
@@ -180,7 +243,7 @@ class Student():
         '''
 
         cursor = mysql.get_db().cursor()
-        cursor.execute("SELECT * FROM {} WHERE student_email = '{}' or student_phone = '{}' ".format(self.table_name(self), email, phone))
+        cursor.execute("SELECT * FROM {} WHERE student_email = '{}' ".format(self.table_name(self), email))
         row = cursor.fetchone()
         if row is None:
             return False
@@ -209,7 +272,7 @@ class Student():
 
 
     # Creates a student
-    def create(self, mysql, first_name, last_name, gender, age, email, country_code, phone, password):
+    def create(self, mysql, first_name, last_name, email, password):
         '''
         Inserts new student to the database
 
@@ -219,15 +282,39 @@ class Student():
         '''
         cursor = mysql.get_db().cursor()
         sql = '''INSERT INTO {} (student_first_name, student_last_name,
-        student_gender, student_birthdate, student_email, student_country_code, student_phone) VALUES
-        ('{}', '{}', '{}', '{}', '{}', '{}', '{}')'''.format(self.table_name(self), first_name, last_name, gender,
-        age, email, country_code, phone)
+        student_email ) VALUES
+        ('{}', '{}', '{}' )'''.format(self.table_name(self), first_name, last_name, email )
         row = cursor.execute(sql)
         mysql.get_db().commit()
         student_id = cursor.lastrowid # last inserted id
         self.create_password(self, mysql, password, student_id) # Create password
-        self.create_email_verification(self, mysql, student_id) # Create email verification token
+        token = self.create_email_verification(self, mysql, student_id) # Create email verification token
         if row is 1:
-            return student_id
+            return token, student_id  # Email confirmation token and id
         else:
             return None
+
+    # Activate account
+    def account_activate(self, mysql, id, token):
+        '''
+        Activates account after sign up.
+        Considers all verification with more than 24 hours expired (So dosen´t activate)
+
+        Parameters:
+            mysql: Mysql connection cursor
+            id: account id
+            token: confirmation token coming from activation email url
+        '''
+        new_status = 'Active' # New student account status
+        active = 1
+        cursor = mysql.get_db().cursor()
+        sql = '''UPDATE {} JOIN {} SET student_account_status = '{}' WHERE ( student_id = email_verification_account_id ) AND
+        ( email_verification_datetime > DATE_SUB(NOW(), INTERVAL 24 HOUR ) AND email_verification_active = '{}' AND
+        student_id = '{}' AND email_verification_token = '{}' AND email_verification_account_type = '{}')'''.format(
+        self.table_name(self), self.mail_verify_table_name(self), new_status, active, id, token, self.account_type(self) )
+        row = cursor.execute(sql)
+        mysql.get_db().commit()
+        if row == 1:
+            return True
+        else:
+            return False

@@ -117,30 +117,55 @@ def find_all_students ():
     elif request.method == 'POST':
         first_name   = request.json.get('first_name')
         last_name    = request.json.get('last_name')
-        gender       = request.json.get('gender')
-        birthdate    = request.json.get('birthdate')
         email        = request.json.get('email')
-        country_code = request.json.get('country_code')
-        phone        = request.json.get('phone')
         password     = hashlib.md5(request.json.get('password').encode()).hexdigest() # Hash password
 
-        if first_name is None or last_name is None or gender is None or birthdate is None or email is None or country_code is None or phone is None or password is None:
-            return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
-        elif Student.exists(Student, mysql, email, phone) is True:
-            return jsonify({'Status': 'Error: Student already exists'}), 400 # Mentor already exists
+        if first_name is None or last_name is None or email is None or password is None:
+            return jsonify({'status': 111,'report': 'Error: Missing arguments'}), 400 # Missing arguments
+        elif Student.email_exists(Student, mysql, email ) is True:
+            return jsonify({'status': 222, 'report': 'Error: Student already exists'}), 400 # Mentor already exists
         else:
-            result = Student.create(Student, mysql, first_name, last_name, gender, birthdate, email, country_code, phone, password)
-            if  result is not None:
-                return jsonify({'Status': 'Sucess', 'id': result}), 201 # Success
+            token, id = Student.create(Student, mysql, first_name, last_name, email, password)
+            if  token is not None:
+                return jsonify({'status': 100, 'report': 'Success', 'student_id': id, 'token': token }), 201 # Success
             else:
-                return jsonify({'Status': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
-
+                return jsonify({'status': 333 ,'report': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
 
     elif request.method == 'UPDATE':
         return "UPDATES"
     elif request.method == 'DELETE':
         return "DELETES"
 
+
+# Create student account email verification
+@app.route("/Account/Students/CreateActivation/", methods = ['POST'])
+def student_create_email_activation():
+    if request.method == 'POST':
+        id = request.json.get('id')
+        token = Student.create_email_verification(Student, mysql, id)
+        if token is None:
+            return jsonify({'status': 333 ,'report': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
+        else:
+            return jsonify({'status': 100, 'report': 'Success', 'student_id': id, 'token': token }), 201 # Success
+
+
+# Student account email activation
+@app.route("/Account/Students/Activate/", methods = ['POST'])
+def student_account_activation():
+    if request.method == 'POST':
+        id    = request.json.get('id')
+        token = request.json.get('token')
+        expired = Student.email_verification_in_date(Student, mysql, token, id) # Hold true if verification expired
+        result = Student.account_activate(Student, mysql, id, token)
+        if id is None or token is None:
+            return jsonify({'status': 111,'report': 'Missing arguments'}), 400 # Missing arguments
+        elif expired is True:
+            return jsonify({'status': 105,'report': 'Verification expired'}), 400 # Wrong answer
+        elif result is True:
+            Student.desactivate_email_verification(Student, mysql, token, id)
+            return jsonify({'status': 100,'report': 'Success'}), 200 # Sucess
+        else:
+            return jsonify({'status': 444,'report': 'Access denied'}), 400 # Wrong answer
 
 # CRDU Student by id
 @app.route("/Account/Students/<int:id>", methods = ['GET', 'POST', 'UPDATE', 'DELETE'])
@@ -165,17 +190,19 @@ def login_students():
     if request.method == 'POST':
         username   = request.json.get('username')
         password   = hashlib.md5(request.json.get('password').encode()).hexdigest() # Hash password
-
+        is_active = Student.is_active(Student, mysql, username)
         if username is None or password is None:
-            return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
+            return jsonify({'Status': 111, 'report':'Missing arguments'}), 400 # Missing arguments
+        elif is_active is False:
+            return jsonify({'status': 445, 'report': 'Access denied: account not active'}), 400 # Missing arguments
         else:
             id = Student.authenticate(Student, mysql, username, password)
             if id is not None:
-                return json.dumps({'id': id }), 201 # Success
+                return json.dumps({'status': 100, 'report':'Success', 'id': id }), 201 # Success
             else:
-                return jsonify({'Status': 'Error: Check you credentials'}), 400 # Missing arguments
+                return jsonify({'status': 444, 'report': 'Access denied: Check you credentials'}), 400 # Missing arguments
     else:
-        return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
+        return jsonify({'Status': 'Error: Bad request'}), 404 # Bad request
 
 
 # Courses
