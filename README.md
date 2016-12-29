@@ -8,6 +8,12 @@ Kutiva API is an application programming interface which provides to client appl
 data queried from Kutiva database. The API is permanently accessible only for Kutiva
 applications, whichs means it is private.
 
+# Run
+To run Kutiva API:
+* You are requested to run database first of all: make sure you setup same database credentials as you current host to config.py
+* If you want to call API from an another App make sure API and databases are running with no errors
+* Any models not loading you are also encourage to intall it on the virtual enviroment
+
 # Basics
 We cover more about Kutiva API on [], in the following sections we explain more about
 the kind of requests can be performed and how can be performed with concrete code examlse
@@ -21,5 +27,3 @@ follows:
 GET api.kutiva.co.mz/Account/Mentors/<id>
 '''
 # Usage
-
-## Users

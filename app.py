@@ -158,11 +158,11 @@ def student_account_activation():
     if request.method == 'POST':
         id    = request.json.get('id')
         token = request.json.get('token')
-        expired = Student.email_verification_in_date(Student, mysql, token, id) # Hold true if verification expired
+        in_date = Student.email_verification_in_date(Student, mysql, token, id) # Hold true if verification expired
         result = Student.account_activate(Student, mysql, id, token)
         if id is None or token is None:
             return jsonify({'status': 111,'report': 'Missing arguments'}), 400 # Missing arguments
-        elif expired is True:
+        elif in_date is False:
             return jsonify({'status': 105,'report': 'Verification expired'}), 400 # Wrong answer
         elif result is True:
             Student.desactivate_email_verification(Student, mysql, token, id)
