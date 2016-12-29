@@ -67,7 +67,8 @@ class Course():
             return False
 
     # Creates a course
-    def create(self, mysql, course_name, course_category, course_description, course_price, course_duration_time, image_path, mentor_id):
+    def create(self, mysql, course_name, course_category, course_description, course_price, course_duration_time,
+    course_audience_level, course_tags, image_path, mentor_id):
         '''
         Inserts new course to the database
 
@@ -78,19 +79,21 @@ class Course():
             course_description: the course content description
             course_price: the course price amount
             course_duration_time: the course duration time
+            course_audience_level: defines the level of audience the course was done
+            course_tags: the keywords related to the course for SEO purposes
             image_path: image location path
         '''
         cursor = mysql.get_db().cursor()
-        sql = '''INSERT INTO {} (course_name, course_category, course_description, course_price, course_duration_time) VALUES
-        ('{}', '{}', '{}', '{}', '{}')'''.format(self.table_name(self), course_name, course_category, course_description, course_price,
-        course_duration_time)
+        sql = '''INSERT INTO {} (course_name, course_category, course_description, course_price, course_audience_level, course_tags,
+        course_duration_time) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}')'''.format(self.table_name(self), course_name, course_category,
+        course_description, course_price, course_audience_level, course_tags, course_duration_time )
         row = cursor.execute(sql)
         mysql.get_db().commit()
         course_id = cursor.lastrowid # last inserted id
         self.insert_course_image(self, mysql, image_path, course_id) # Stores image to database
         self.insert_course_mentor(self, mysql, course_id, mentor_id) # Create course mentor menay_to_many table
         if row is 1:
-            return True
+            return course_id
         else:
             return None
 
@@ -141,24 +144,26 @@ class Course():
                     'course_category':          i[2],
                     'course_description':       i[3],
                     'course_price':             i[4],
-                    'course_duration':          str(i[5]),
-                    'course_stars':             i[6],
-                    'course_status':            i[7],
-                    'course_published':         i[8],
-                    'course_image_id':          i[12],
-                    'course_image_href':        i[13],
-                    'course_image_active':      i[14],
-                    'course_image_datetime':    i[15],
-                    'mentor_id':                i[17],
-                    'mentor_first_name':        i[18],
-                    'mentor_last_name':         i[19],
-                    'mentor_scope_category':    i[20],
-                    'mentor_email':             i[21],
-                    'mentor_country_code':      i[22],
-                    'mentor_phone':             i[23],
-                    'mentor_image':             i[24],
-                    'mentor_status':            i[25],
-                    'mentor_account_datetime':  i[26]
+                    'course_audience_level':    i[5],
+                    'course_tags':              i[6],
+                    'course_duration':          str(i[7]),
+                    'course_stars':             i[8],
+                    'course_status':            i[9],
+                    'course_published':         i[10],
+                    'course_image_id':          i[14],
+                    'course_image_href':        i[15],
+                    'course_image_active':      i[16],
+                    'course_image_datetime':    i[17],
+                    'mentor_id':                i[19],
+                    'mentor_first_name':        i[20],
+                    'mentor_last_name':         i[21],
+                    'mentor_scope_category':    i[22],
+                    'mentor_email':             i[23],
+                    'mentor_country_code':      i[24],
+                    'mentor_phone':             i[25],
+                    'mentor_image':             i[26],
+                    'mentor_status':            i[27],
+                    'mentor_account_datetime':  i[28]
                     }
                 result.append(data)
 
@@ -184,33 +189,84 @@ class Course():
         if row is None:
             return None
         else:
-
             data = {
-                'course_id':               row[0],
-                'course_name':             row[1],
-                'course_category':         row[2],
-                'course_description':      row[3],
-                'course_price':            row[4],
-                'course_duration':          str(row[5]),
-                'course_stars':            row[6],
-                'course_status':           row[7],
-                'course_published':        row[8],
-                'course_image_id':         row[12],
-                'course_image_href':       row[13],
-                'course_image_active':     row[14],
-                'course_image_datetime':   row[15],
-                'mentor_id':               row[17],
-                'mentor_first_name':       row[18],
-                'mentor_last_name':        row[19],
-                'mentor_scope_category':   row[20],
-                'mentor_email':            row[21],
-                'mentor_country_code':     row[22],
-                'mentor_phone':            row[23],
-                'mentor_image':            row[24],
-                'mentor_status':           row[25],
-                'mentor_account_datetime': row[26]
+                'course_id':                row[0],
+                'course_name':              row[1],
+                'course_category':          row[2],
+                'course_description':       row[3],
+                'course_price':             row[4],
+                'course_audience_level':    row[5],
+                'course_tags':              row[6],
+                'course_duration':          str(row[7]),
+                'course_stars':             row[8],
+                'course_status':            row[9],
+                'course_published':         row[10],
+                'course_image_id':          row[14],
+                'course_image_href':        row[15],
+                'course_image_active':      row[16],
+                'course_image_datetime':    row[17],
+                'mentor_id':                row[19],
+                'mentor_first_name':        row[20],
+                'mentor_last_name':         row[21],
+                'mentor_scope_category':    row[22],
+                'mentor_email':             row[23],
+                'mentor_country_code':      row[24],
+                'mentor_phone':             row[25],
+                'mentor_image':             row[26],
+                'mentor_status':            row[27],
+                'mentor_account_datetime':  row[28]
                 }
+            return jsonify(data)
 
+
+    # Find course by id
+    def find_by_ids(self, mysql, mentor_id, course_id):
+        '''
+        Find a course by ids
+
+        Parameters:
+            mysql: Mysql connection cursor
+            mentor_id: id of the mentor
+            course_id: id of the course
+
+        '''
+        cursor = mysql.get_db().cursor()
+        sql = '''SELECT * FROM {} JOIN {} JOIN {} JOIN {} WHERE (course_image_course_id = course_id and course_id = cm_course_id
+        and cm_mentor_id = mentor_id ) and course_id = {} and cm_mentor_id = {} '''.format(self.table_name(self), self.course_mentor_table_name(self),
+        self.course_image_table_name(self), Mentor.table_name(self), course_id, mentor_id)
+        cursor.execute(sql)
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+        else:
+            data = {
+                'course_id':                row[0],
+                'course_name':              row[1],
+                'course_category':          row[2],
+                'course_description':       row[3],
+                'course_price':             row[4],
+                'course_audience_level':    row[5],
+                'course_tags':              row[6],
+                'course_duration':          str(row[7]),
+                'course_stars':             row[8],
+                'course_status':            row[9],
+                'course_published':         row[10],
+                'course_image_id':          row[14],
+                'course_image_href':        row[15],
+                'course_image_active':      row[16],
+                'course_image_datetime':    row[17],
+                'mentor_id':                row[19],
+                'mentor_first_name':        row[20],
+                'mentor_last_name':         row[21],
+                'mentor_scope_category':    row[22],
+                'mentor_email':             row[23],
+                'mentor_country_code':      row[24],
+                'mentor_phone':             row[25],
+                'mentor_image':             row[26],
+                'mentor_status':            row[27],
+                'mentor_account_datetime':  row[28]
+                }
             return jsonify(data)
 
 
@@ -242,24 +298,26 @@ class Course():
                     'course_category':          i[2],
                     'course_description':       i[3],
                     'course_price':             i[4],
-                    'course_duration':          str(i[5]),
-                    'course_stars':             i[6],
-                    'course_status':            i[7],
-                    'course_published':         i[8],
-                    'course_image_id':          i[12],
-                    'course_image_href':        i[13],
-                    'course_image_active':      i[14],
-                    'course_image_datetime':    i[15],
-                    'mentor_id':                i[17],
-                    'mentor_first_name':        i[18],
-                    'mentor_last_name':         i[19],
-                    'mentor_scope_category':    i[20],
-                    'mentor_email':             i[21],
-                    'mentor_country_code':      i[22],
-                    'mentor_phone':             i[23],
-                    'mentor_image':             i[24],
-                    'mentor_status':            i[25],
-                    'mentor_account_datetime':  i[26]
+                    'course_audience_level':    i[5],
+                    'course_tags':              i[6],
+                    'course_duration':          str(i[7]),
+                    'course_stars':             i[8],
+                    'course_status':            i[9],
+                    'course_published':         i[10],
+                    'course_image_id':          i[14],
+                    'course_image_href':        i[15],
+                    'course_image_active':      i[16],
+                    'course_image_datetime':    i[17],
+                    'mentor_id':                i[19],
+                    'mentor_first_name':        i[20],
+                    'mentor_last_name':         i[21],
+                    'mentor_scope_category':    i[22],
+                    'mentor_email':             i[23],
+                    'mentor_country_code':      i[24],
+                    'mentor_phone':             i[25],
+                    'mentor_image':             i[26],
+                    'mentor_status':            i[27],
+                    'mentor_account_datetime':  i[28]
                     }
                 result.append(data)
 
@@ -295,24 +353,26 @@ class Course():
                     'course_category':          i[2],
                     'course_description':       i[3],
                     'course_price':             i[4],
-                    'course_duration':          str(i[5]),
-                    'course_stars':             i[6],
-                    'course_status':            i[7],
-                    'course_published':         i[8],
-                    'course_image_id':          i[12],
-                    'course_image_href':        i[13],
-                    'course_image_active':      i[14],
-                    'course_image_datetime':    i[15],
-                    'mentor_id':                i[17],
-                    'mentor_first_name':        i[18],
-                    'mentor_last_name':         i[19],
-                    'mentor_scope_category':    i[20],
-                    'mentor_email':             i[21],
-                    'mentor_country_code':      i[22],
-                    'mentor_phone':             i[23],
-                    'mentor_image':             i[24],
-                    'mentor_status':            i[25],
-                    'mentor_account_datetime':  i[26]
+                    'course_audience_level':    i[5],
+                    'course_tags':              i[6],
+                    'course_duration':          str(i[7]),
+                    'course_stars':             i[8],
+                    'course_status':            i[9],
+                    'course_published':         i[10],
+                    'course_image_id':          i[14],
+                    'course_image_href':        i[15],
+                    'course_image_active':      i[16],
+                    'course_image_datetime':    i[17],
+                    'mentor_id':                i[19],
+                    'mentor_first_name':        i[20],
+                    'mentor_last_name':         i[21],
+                    'mentor_scope_category':    i[22],
+                    'mentor_email':             i[23],
+                    'mentor_country_code':      i[24],
+                    'mentor_phone':             i[25],
+                    'mentor_image':             i[26],
+                    'mentor_status':            i[27],
+                    'mentor_account_datetime':  i[28]
                     }
                 result.append(data)
 

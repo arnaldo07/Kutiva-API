@@ -1,14 +1,17 @@
-# views.py by Arnaldo Govene [arnaldo.govene@outlook.com]
+# app.py by Arnaldo Govene [arnaldo.govene@outlook.com]
 # This is the view level which defines view to be displyed according to the routes
 # Copyrighth 2016 Xindiri, LLC
 
 from flask import Flask, request, jsonify, json
-from flask.ext.mysql import MySQL
+from flaskext.mysql import MySQL
 from models.mentor import Mentor
 from models.student import Student
 from models.course import Course
+from models.lesson import Lesson
 from utils import Utils
 import hashlib
+import os, shutil
+from werkzeug.utils import secure_filename
 
 mysql = MySQL()
 app = Flask(__name__)
@@ -30,7 +33,7 @@ def find_all_mentors ():
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 'Error: No results was found'}), 404 # No results were found
 
     # POST Mentors data
     elif request.method == 'POST':
@@ -43,15 +46,15 @@ def find_all_mentors ():
         password     = hashlib.md5(request.json.get('password').encode()).hexdigest() # Hash password
 
         if first_name is None or last_name is None or category is None or email is None or country_code is None or phone is None or password is None:
-            return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
-        elif Mentor.exists(Mentor, mysql, email, phone) is True:
-            return jsonify({'Status': 'Error: Mentor already exists'}), 400 # Mentor already exists
+            return jsonify({'status': 111,'report': 'Error: Missing arguments'}), 400 # Missing arguments
+        elif Mentor.email_exists(Mentor, mysql, email) is True:
+            return jsonify({'status': 'Error: Mentor already exists'}), 400 # Mentor already exists
         else:
             result = Mentor.create(Mentor, mysql, first_name, last_name, category, email, country_code, phone, password)
             if result is not None:
-                return jsonify({'Status': 'Sucess', 'id': result}), 201 # Success
+                return jsonify({'status': 'Sucess', 'id': result}), 201 # Success
             else:
-                return jsonify({'Status': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
+                return jsonify({'status': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
 
 # Mentors CRDU by id
 @app.route("/Account/Mentors/<int:id>", methods = ['GET', 'UPDATE', 'DELETE'])
@@ -61,7 +64,7 @@ def find_mentors_by_id (id):
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 'Error: No results was found'}), 404 # No results were found
 
     elif request.method == 'UPDATE':
         return "UPDATES"
@@ -76,7 +79,7 @@ def find_mentors_by_category (category):
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 'Error: No results was found'}), 404 # No results were found
 
 
     elif request.method == 'UPDATE':
@@ -88,19 +91,19 @@ def find_mentors_by_category (category):
 @app.route("/Account/Mentors/Login/", methods = ['POST'])
 def login_mentors():
     if request.method == 'POST':
-        username   = request.args.get('username')
-        password   = hashlib.md5(request.args.get('password').encode()).hexdigest() # Hash password
+        username   = request.json.get('username')
+        password   = hashlib.md5(request.json.get('password').encode()).hexdigest() # Hash password
 
         if username is None or password is None:
-            return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
+            return jsonify({'status': 111,'report': 'Error: Missing arguments'}), 400 # Missing arguments
         else:
             id = Mentor.authenticate(Mentor, mysql, username, password)
             if id is not None:
                 return jsonify({'id': id }), 201 # Success
             else:
-                return jsonify({'Status': 'Error: Check you credentials'}), 400 # Missing arguments
+                return jsonify({'status': 'Error: Check you credentials'}), 400 # Missing arguments
     else:
-        return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
+        return jsonify({'status': 'Error: Bad request'}), 400 # Bad request
 
 
 # All students CRDU
@@ -111,7 +114,7 @@ def find_all_students ():
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 'Error: No results was found'}), 404 # No results were found
 
     # POST student data
     elif request.method == 'POST':
@@ -175,7 +178,7 @@ def find_student_by_id (id):
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 444, 'reoprt': 'Error: No results was found'}), 404 # No results were found
 
     elif request.method == 'POST':
         return"POST by "+str(id)
@@ -192,17 +195,17 @@ def login_students():
         password   = hashlib.md5(request.json.get('password').encode()).hexdigest() # Hash password
         is_active = Student.is_active(Student, mysql, username)
         if username is None or password is None:
-            return jsonify({'Status': 111, 'report':'Missing arguments'}), 400 # Missing arguments
+            return jsonify({'status': 111, 'report':'Missing arguments'}), 400 # Missing arguments
         elif is_active is False:
-            return jsonify({'status': 445, 'report': 'Access denied: account not active'}), 400 # Missing arguments
+            return jsonify({'status': 445, 'report': 'Access denied: account not active'}), 400 # Acces denied
         else:
-            id = Student.authenticate(Student, mysql, username, password)
+            id = Student.authenticate(Student, mysql, username, password) is not None
             if id is not None:
                 return json.dumps({'status': 100, 'report':'Success', 'id': id }), 201 # Success
             else:
-                return jsonify({'status': 444, 'report': 'Access denied: Check you credentials'}), 400 # Missing arguments
+                return jsonify({'status': 444, 'report': 'Access denied: Check you credentials'}), 400 # credentials
     else:
-        return jsonify({'Status': 'Error: Bad request'}), 404 # Bad request
+        return jsonify({'status': 'Error: Bad request'}), 404 # Bad request
 
 
 # Courses
@@ -213,25 +216,30 @@ def find_all_courses ():
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
-
+            return jsonify({'status': 444, 'reoprt': 'Error: No results was found'}), 404 # No results were found
 
     # POST course data
     elif request.method == 'POST':
+
         course_name          = request.json.get('course_name')
         course_category      = request.json.get('course_category')
         course_description   = request.json.get('course_description')
+        course_price         = request.json.get('course_price')
         course_duration_time = request.json.get('course_duration_time')
+        course_audience_level= request.json.get('course_audience_level')
+        course_tags          = request.json.get('course_tags')
+        mentor_id            = request.json.get('mentor_id')
+        cover_image_path     = request.json.get('cover_image')
 
-        if course_name is not None or course_category is not None or course_description is not None or course_duration_time is not None:
-            return jsonify({'Status': 'Error: Missing arguments'}), 400 # Missing arguments
+        if course_name is None or course_category is None or course_description is None or course_price is None or course_duration_time is None or course_audience_level is None or course_tags is None or cover_image_path is None or mentor_id is None:
+            return jsonify({'status': 111,'report': 'Error: Missing arguments'}), 400 # Missing arguments
         else:
-            mentor_id = session['mentor_id']
-            result = Course.create(Course, mysql, course_name, course_category, course_description, course_price, course_duration_time, mentor_id)
+            result = Course.create(Course, mysql, course_name, course_category, course_description, course_price, course_duration_time,
+            course_audience_level, course_tags, cover_image_path, mentor_id)
             if result is not None:
-                return jsonify({'Status': 'Sucess', 'id': result}), 201 # Success
+                return jsonify({'status': 100, 'report':'Sucess', 'id': result}), 201 # Success
             else:
-                return jsonify({'Status': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
+                return jsonify({'status': 333 ,'report': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
 
     elif request.method == 'UPDATE':
         return "UPDATES"
@@ -246,7 +254,7 @@ def find_course_by_id (id):
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 444, 'reoprt': 'Error: No results was found'}), 404 # No results were found
 
     elif request.method == 'UPDATE':
         return "UPDATES"
@@ -261,9 +269,9 @@ def find_course_by_category (category):
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 444, 'reoprt': 'Error: No results was found'}), 404 # No results were found
     else:
-        return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
+        return jsonify({'status': 445, 'report': 'Error: Bad request'}), 400 # Bad request
 
 # Courses by search
 @app.route("/Courses/Search/<string:search>", methods = ['GET'])
@@ -273,9 +281,38 @@ def search_course (search):
         if result is not None:
             return result # Json encoded response
         else:
-            return jsonify({'Status': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 444, 'reoprt': 'Error: No results was found'}), 404 # No results were found
     else:
-        return jsonify({'Status': 'Error: Bad request'}), 400 # Bad request
+        return jsonify({'status': 445, 'report': 'Error: Bad request'}), 400 # Bad request
+
+
+# Lesson
+@app.route("/Course/Lessons/Create", methods = ['POST'])
+def create_lesson():
+    if request.method == 'POST':
+        lesson_title  = request.json.get('lesson_title')
+        lesson_path   = request.json.get('lesson_path')
+        lesson_length = '5:03'
+        lesson_locked = request.json.get('lesson_locked')
+        lesson_section_number  = 1
+        lesson_section_name  = request.json.get('lesson_section_name')
+        lesson_course_id = request.json.get('course_id')
+        lesson_mentor_id = request.json.get('mentor_id')
+
+        if lesson_title is None or lesson_path is None or lesson_length is None or lesson_locked is None or lesson_section_number is None or lesson_section_name is None or lesson_course_id is None or lesson_mentor_id is None:
+            return jsonify({'status': 111,'report': 'Error: Missing arguments'}), 400 # Missing arguments
+        else:
+            # check if course exists
+            exists = Course.find_by_ids(Course, mysql, lesson_mentor_id, lesson_course_id)
+            if exists is not None:
+                result = Lesson.create(Lesson, mysql, lesson_title, lesson_path, lesson_length, lesson_locked, lesson_section_number,
+                lesson_section_name, lesson_course_id) # create lesson
+                if result is not None:
+                    return jsonify({'status': 100, 'report': 'Success', 'lesson_id': result, 'course_id': lesson_course_id }), 201 # Success
+                else:
+                    return jsonify({'status': 333 ,'report': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
+            else:
+                return jsonify({'status': 445, 'report': 'Error: Bad request'}), 400 # Bad request
 
 
 

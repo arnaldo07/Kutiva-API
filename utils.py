@@ -14,3 +14,14 @@ class Utils():
     # Verify password
     def password_verify(self, password):
         return pwd_context.verify(password, self._hashed_password)
+
+    # check allowed files on uploaded
+    def allowed_file(filename, allowed_extensions):
+        '''
+        check if file to be uploaded has the required extension
+
+        Parameters:
+            filename: the name of file to be uploaded
+            allowed_extensions: list of allowed extensions
+        '''
+        return '.' in filename and filename.rsplit('.', 1)[1] in allowed_extensions

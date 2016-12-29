@@ -140,32 +140,6 @@ class Student():
         else:
             return token
 
-    # Update email verification
-    def update_email_verification(self, mysql, account_id):
-        '''
-        Updates email_verificaion to the database
-
-        Parameters:
-            mysql: Mysql connection cursor
-            account_id : verification account id
-        '''
-        active = 1 # Set email token active to true
-        cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
-        tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
-        token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
-        cursor = mysql.get_db().cursor()
-
-        sql = '''UPDATE {} SET email_verification_token = '{}' AND email_verification_active = '{}' AND
-        email_verification_datetime = CURRENT_TIMESTAMP WHERE email_verification_account_type = '{}'
-        AND email_verification_account_id '''.format(self.mail_verify_table_name(self), token, active,
-        self.account_type(self), account_id )
-        row = cursor.execute(sql)
-        mysql.get_db().commit()
-
-        if row == 1:
-            return token
-        else:
-            return None
 
     # Desactivate mail verification token
     def desactivate_email_verification(self, mysql, token, account_id):
@@ -209,9 +183,9 @@ class Student():
         '''.format(self.mail_verify_table_name(self), token, self.account_type(self), id, active))
         row = cursor.fetchone()
         if row is None:
-            return True
-        else:
             return False
+        else:
+            return True
 
     # Check if account is actived
     def is_active(self, mysql, email):

@@ -102,26 +102,29 @@ class Mentor():
         '''
 
         cursor = mysql.get_db().cursor()
-        cursor.execute('''SELECT * from {} WHERE mentor_scope_category = "{}" '''.format(self.table_name(self), category))
-        row = cursor.fetchone()
+        cursor.execute('''SELECT * from {} WHERE mentor_scope_category LIKE "{}" '''.format(self.table_name(self), category))
+        row = cursor.fetchall()
 
         if row is None:
             return None
         else:
-            data = {
-                'id':                        row[0],
-                'first_name':                row[1],
-                'last_name':                 row[2],
-                'category':                  row[3],
-                'email':                     row[4],
-                'country_code':              row[5],
-                'phone':                     row[6],
-                'profile_image_url':         row[7],
-                'account_status':            row[8],
-                'account_registration_date': row[9]
-                }
+            result = []
+            for i in row:
+                data = {
+                    'id':                        i[0],
+                    'first_name':                i[1],
+                    'last_name':                 i[2],
+                    'category':                  i[3],
+                    'email':                     i[4],
+                    'country_code':              i[5],
+                    'phone':                     i[6],
+                    'profile_image_url':         i[7],
+                    'account_status':            i[8],
+                    'account_registration_date': i[9]
+                    }
+                result.append(data)
 
-            return jsonify(data)
+            return jsonify(result)
 
     def authenticate(self, mysql, username, password):
         '''
@@ -134,7 +137,7 @@ class Mentor():
         '''
         cursor = mysql.get_db().cursor()
         sql = '''SELECT mentor_id FROM {} JOIN {} WHERE (mentor_id = password_owner_account_id and password_owner_account_type = '{}')
-         and ( mentor_email = '{}' and password_encrypted = '{}' )'''.format(self.table_name(self), self.pwd_table_name(self), self.account_type(self), username, password)
+        and ( mentor_email = '{}' and password_encrypted = '{}' )'''.format(self.table_name(self), self.pwd_table_name(self), self.account_type(self), username, password)
         cursor.execute(sql)
         row = cursor.fetchone()
 
@@ -172,7 +175,7 @@ class Mentor():
                 mysql: Mysql connection cursor
                 account_id : verification account id
             '''
-            active = True # Set email token active to true
+            active = 1 # Set email token active to true
             cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
             tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
             token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
@@ -184,52 +187,23 @@ class Mentor():
             row = cursor.execute(sql)
             mysql.get_db().commit()
 
-            if row is None:
-                return False
-            else:
+            if row is 1:
                 return True
-
-
-    # Update email verification
-    def update_email_verification(self, mysql, account_id):
-            '''
-            Updates email_verificaion to the database
-
-            Parameters:
-                mysql: Mysql connection cursor
-                account_id : verification account id
-            '''
-            active = True # Set email token active to true
-            cur_datetime = strftime("%Y-%m-%d %H:%M:%S", gmtime()) # Generate current datetime
-            tokenize = "{}{}".format(account_id, cur_datetime) # To be turned to token
-            token = hashlib.md5(tokenize.encode()).hexdigest() # Hash token
-            cursor = mysql.get_db().cursor()
-
-            sql = '''UPDATE {} SET email_verification_token = '{}' AND email_verification_active = '{}' AND
-            email_verification_datetime = CURRENT_TIMESTAMP WHERE email_verification_account_type = '{}'
-            AND email_verification_account_id '''.format(self.mail_verify_table_name(self), token, active,
-            self.account_type(self), account_id )
-            row = cursor.execute(sql)
-            mysql.get_db().commit()
-
-            if row is None:
-                return False
             else:
-                return True
+                return False
 
-    
-    def exists(self, mysql, email, phone):
+
+    def email_exists(self, mysql, email):
         '''
-        Checks if account exist
+        Checks if email account is already registered
 
         Parameters:
             mysql: Mysql connection cursor
             email: mentor email
-            phone: mentor phone number
         '''
 
         cursor = mysql.get_db().cursor()
-        cursor.execute("SELECT * FROM {} WHERE mentor_email = '{}' or mentor_phone = '{}' ".format(self.table_name(self), email, phone))
+        cursor.execute('''SELECT * FROM {} WHERE mentor_email = '{}'  '''.format(self.table_name(self), email))
         row = cursor.fetchone()
         if row is None:
             return False
