@@ -158,17 +158,17 @@ def student_account_activation():
     if request.method == 'POST':
         id    = request.json.get('id')
         token = request.json.get('token')
-        in_date = Student.email_verification_in_date(Student, mysql, token, id) # Hold true if verification expired
-        result = Student.account_activate(Student, mysql, id, token)
         if id is None or token is None:
             return jsonify({'status': 111,'report': 'Missing arguments'}), 400 # Missing arguments
-        elif in_date is False:
-            return jsonify({'status': 105,'report': 'Verification expired'}), 400 # Wrong answer
-        elif result is True:
-            Student.desactivate_email_verification(Student, mysql, token, id)
-            return jsonify({'status': 100,'report': 'Success'}), 200 # Sucess
         else:
-            return jsonify({'status': 444,'report': 'Access denied'}), 400 # Wrong answer
+            in_date = Student.email_verification_in_date(Student, mysql, token, id) # Hold true if verification expired
+            if in_date is False:
+                return jsonify({'status': 105,'report': 'Verification expired'}), 400 # Wrong answer
+            elif Student.account_activate(Student, mysql, id) is True:
+                Student.desactivate_email_verification(Student, mysql, token, id)
+                return jsonify({'status': 100,'report': 'Success'}), 200 # Sucess
+            else:
+                return jsonify({'status': 444,'report': 'Access denied'}), 400 # Wrong answer
 
 # CRDU Student by id
 @app.route("/Account/Students/<int:id>", methods = ['GET', 'POST', 'UPDATE', 'DELETE'])
@@ -196,12 +196,13 @@ def login_students():
         is_active = Student.is_active(Student, mysql, username)
         if username is None or password is None:
             return jsonify({'status': 111, 'report':'Missing arguments'}), 400 # Missing arguments
-        elif is_active is False:
-            return jsonify({'status': 445, 'report': 'Access denied: account not active'}), 400 # Acces denied
         else:
-            id = Student.authenticate(Student, mysql, username, password) is not None
+            id = Student.authenticate(Student, mysql, username, password)
             if id is not None:
-                return json.dumps({'status': 100, 'report':'Success', 'id': id }), 201 # Success
+                if is_active is True:
+                    return json.dumps({'status': 100, 'report':'Success', 'id': id }), 201 # Success
+                else:
+                    return jsonify({'status': 445, 'report': 'Access denied: account not active'}), 400 # Acces denied
             else:
                 return jsonify({'status': 444, 'report': 'Access denied: Check you credentials'}), 400 # credentials
     else:
@@ -313,6 +314,19 @@ def create_lesson():
                     return jsonify({'status': 333 ,'report': 'Error: Ups, Something went wrong, we don´t know what'}), 400 # Any database problem
             else:
                 return jsonify({'status': 445, 'report': 'Error: Bad request'}), 400 # Bad request
+
+# Display lessons by course id
+@app.route('/Course/Lessons/<int:course_id>', methods=['GET'])
+def lesson_by_course(course_id):
+    if request.method == 'GET':
+        result = Lesson.find_by_course(Lesson, mysql, course_id );
+        if result is not None:
+            return result, 200 #success
+        else:
+            return jsonify({'status': 445, 'report': 'Error: No results was found'}), 404 # No results were found
+    else:
+        return jsonify({'status': 445, 'report': 'Error: Bad request'}), 400 # Bad request
+
 
 
 

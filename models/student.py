@@ -179,8 +179,7 @@ class Student():
         cursor = mysql.get_db().cursor()
         cursor.execute('''SELECT * FROM {} WHERE email_verification_token = '{}' AND email_verification_account_type = '{}'
         AND email_verification_account_id = '{}' AND email_verification_datetime > DATE_SUB(NOW(), INTERVAL 24 HOUR) AND
-        email_verification_active = {}
-        '''.format(self.mail_verify_table_name(self), token, self.account_type(self), id, active))
+        email_verification_active = {} '''.format(self.mail_verify_table_name(self), token, self.account_type(self), id, active))
         row = cursor.fetchone()
         if row is None:
             return False
@@ -196,7 +195,7 @@ class Student():
             mysql: Mysql connection cursor
             email: account email
         '''
-        status = 'active'
+        status = 'Active'
         cursor = mysql.get_db().cursor()
         cursor.execute('''SELECT * FROM {} WHERE student_account_status = '{}' AND student_email = '{}' '''.format(
         self.table_name(self), status, email ))
@@ -269,7 +268,7 @@ class Student():
             return None
 
     # Activate account
-    def account_activate(self, mysql, id, token):
+    def account_activate(self, mysql, id):
         '''
         Activates account after sign up.
         Considers all verification with more than 24 hours expired (So dosen´t activate)
@@ -277,18 +276,14 @@ class Student():
         Parameters:
             mysql: Mysql connection cursor
             id: account id
-            token: confirmation token coming from activation email url
         '''
         new_status = 'Active' # New student account status
         active = 1
         cursor = mysql.get_db().cursor()
-        sql = '''UPDATE {} JOIN {} SET student_account_status = '{}' WHERE ( student_id = email_verification_account_id ) AND
-        ( email_verification_datetime > DATE_SUB(NOW(), INTERVAL 24 HOUR ) AND email_verification_active = '{}' AND
-        student_id = '{}' AND email_verification_token = '{}' AND email_verification_account_type = '{}')'''.format(
-        self.table_name(self), self.mail_verify_table_name(self), new_status, active, id, token, self.account_type(self) )
+        sql = '''UPDATE {} SET student_account_status = '{}' WHERE student_id = '{}' '''.format( self.table_name(self), new_status, id)
         row = cursor.execute(sql)
         mysql.get_db().commit()
-        if row == 1:
+        if row is 1:
             return True
         else:
             return False
