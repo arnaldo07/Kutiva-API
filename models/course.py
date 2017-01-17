@@ -216,7 +216,7 @@ class Course():
                 'mentor_status':            row[27],
                 'mentor_account_datetime':  row[28]
                 }
-            return jsonify(data)
+            return data
 
 
     # Find course by id

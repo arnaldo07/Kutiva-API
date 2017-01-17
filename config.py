@@ -10,7 +10,7 @@ DEBUG = "TRUE" # Turns on flask debug features
 # MYSQL_DATABASE_PASSWORD = ""
 # MYSQL_DATABASE_DB = "kutiva_2016"
 
-# Remote db
+#Remote db
 MYSQL_DATABASE_HOST = "sql10.freemysqlhosting.net"
 MYSQL_DATABASE_USER = "sql10152996"
 MYSQL_DATABASE_PASSWORD = "uKCwpRCwfj"

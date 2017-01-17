@@ -248,14 +248,14 @@ def find_all_courses ():
         return "DELETES"
 
 # Courses by id
-@app.route("/Courses/<int:id>", methods = ['GET', 'UPDATE', 'DELETE'])
+@app.route("/courses/<int:id>", methods = ['GET', 'UPDATE', 'DELETE'])
 def find_course_by_id (id):
     if request.method   == 'GET':
         result = Course.find_by_id(Course, mysql, id)
         if result is not None:
-            return result # Json encoded response
+            return jsonify({'status': 100, 'report': 'Success', 'course': result}), 200 # Success
         else:
-            return jsonify({'status': 444, 'reoprt': 'Error: No results was found'}), 404 # No results were found
+            return jsonify({'status': 444, 'report': 'Error: No results was found'}), 404 # No results were found
 
     elif request.method == 'UPDATE':
         return "UPDATES"
@@ -316,12 +316,12 @@ def create_lesson():
                 return jsonify({'status': 445, 'report': 'Error: Bad request'}), 400 # Bad request
 
 # Display lessons by course id
-@app.route('/Course/Lessons/<int:course_id>', methods=['GET'])
+@app.route('/lessons/<int:course_id>', methods=['GET'])
 def lesson_by_course(course_id):
     if request.method == 'GET':
         result = Lesson.find_by_course(Lesson, mysql, course_id );
         if result is not None:
-            return result, 200 #success
+            return jsonify({'status': 100, 'report': 'Success', 'lessons': result}), 200 # Success
         else:
             return jsonify({'status': 445, 'report': 'Error: No results was found'}), 404 # No results were found
     else:

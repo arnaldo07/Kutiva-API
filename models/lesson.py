@@ -41,7 +41,7 @@ class Lesson():
                     'lesson_course_id':          i[7],
                     }
                 result.append(data)
-            return jsonify(result)
+            return result
 
     # Creates a course
     def create(self, mysql, lesson_title, lesson_path, lesson_length, lesson_locked, lesson_section_number, lesson_section_name,
